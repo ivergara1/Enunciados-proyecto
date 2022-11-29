@@ -1,15 +1,18 @@
-# IIC2173 - E1 - ERT DIY
-*aka. Equipos de respuesta temprana, versión hazlo tu mismo*
+# 2022-2 / IIC2173 - E0 | Smart cities
 
-Después de un alto éxito en la recuperación de datos de emergencia, su consultora LegitBusiness les ha pedido que pasen a una versión mas poderosa de su plataforma. Dado que el despliegue de un equipo ERT tiene un coste altísimo en una emergencia, se les ha pedido que realicen un sistema para buscar<sup>1</sup>y ver la evaluación de las emergencias que podrían tomar los equipos ERT. Para simplificar la plataforma lo más posible para sus usuarios, se les ha pedido que entreguen esta evaluación en forma de índice.
+## Introduccion al proyecto del curso 
 
-## Objetivo
+El futuro de la ciudad apunta a ofrecer más y más comodidades a sus habitantes. No solamente se intenciona que se puedan cumplir los servicios básicos propios de cada ciudad (seguridad, limpieza, tráfico en carreteras, etc) sino que se pide que estos servicios sean cada vez mas eficientes y completos. 
 
-Deben extender su plataforma web para que sea capaz de calcular índices de dificultad en base a los últimos mensajes recibidos
+Uno de los servicios más criticos de las ciudades, es su capacidad de respuesta frente a emergencias, algo clave especialmente en regiones propensas a desastres. En este sentido, los equipos de respuesta temprana (ERT) frente a desastres son sumamente importantes para lograr disminuir desde un primer momento las posibles consecuencias de un desastre
 
-Utilizando a la conexión que ya poseen con el broker de eventos, su app debe seguir recolectando los datos según el formato de la E0
+Estos equipos están compuestos por una unión interdisciplinaria de equipos. Médicos, bomberos, policías, administradores, ingenieros, directores de tránsito se unen para responder a estas emergencias. El concepto de smart cities empodera a estos equipos mediante tecnologías útiles, como equipamiento de coordinacion, sensores de posición para los equipos, drones de observación, sensores de tráfico, capacidades de ruteo, entre otros.  Estas tecnologías proveen la capacidad de tener informacion para tomar decisiones clave y hacer mas eficiente este trabajo.
 
-```json
+## Enunciado 
+
+LegitBusiness, una consultora líder del mercado lo ha contratado para introducirse en este campo. Como primera prueba de concepto, le han pedido que se conecte a un nodo de ejemplo, que emite eventos de diversas emergencias. Estos eventos tienen el siguiente schema JSON y se publican en el canal **global-emergencies**
+
+```
 {
     "type":"string",
     "lat":float,
@@ -19,194 +22,181 @@ Utilizando a la conexión que ya poseen con el broker de eventos, su app debe se
     "level":int
 }
 ```
+Por ejemplo
+```
+{
+    "type":"alert",
+    "lat":-70.61487974212355,
+    "lon":-33.49905829980417,
+    "location":"Campus san joaquín",
+    "message":"Orc attack, trebuchets and molotovs",
+    "level":1000
+}
+```
 
-Usando esta data, le presentará a los usuarios una lista de los eventos, de forma paginada. Los usuarios podrán escoger un evento y solicitar un **cálculo de complejidad** *I<sub>comp</sub>* que se explicará en la siguiente sección.
-
-Adicionalmente, para empezar a lograr un proceso de implementación más expedita de su proyecto, se les pedirá que separen su solución en frontend y backend, además de implementar un proceso de *continuous integration*.
-
-### *Cálculo de I<sub>comp</sub>*
-
-El índice de complejidad se construye mediante la obtención de la suma de la distancia de los eventos a menos de 3 kilómetros de un evento seleccionado, teniendo cada distancia ponderada por el nivel de ese evento dividido por 100, considerando los últimos 2000 eventos. En fórmula sería así:
-
-<center>
-    <img width="20%" src="https://i.imgur.com/SxdiIpH.png">
-</center>
-
-Donde n = 1999, l_i es el nivel del evento i y d<sub>i</sub> es la distancia al evento seleccionado
-
-Este cálculo tomará tiempo por lo que deberá hacerse mediante workers para no detener el flujo principal de su aplicación.
-
-## Implementacion de los workers
-
-Un worker es una instancia de un código generada específicamente para cumplir una tarea asignada, luego de lo cual podría tomar otra, esperar o desaparecer, en base a la alimentación que reciba de una cola de órdenes.
-
-Estos workers se coordinan con un broker y una instancia maestra de coordinación
-
-Afortunadamente, existen paquetes de software que simplifican el trabajo de la implementación de workers.
-
-Recomendamos las siguientes implementaciones para los siguientes lenguajes
-
-* FastAPI, Django
-    * Celery
-* Node
-    * Bull
-* Ruby on rails
-    * Sideqik
-
-Estos workers deben estar coordinados por un maestro independiente de su aplicación. Este maestro es completamente separado de su aplicación y ofrece una API HTTP para recibir las órdenes y ver los resultados. Ofrecerá tres endpoints 
-
-* **GET** /job/(:id)
-    * :id representa el id de un job creado
-
-* **POST** /job
-    * Recibe los datos necesarios para el cálculo y entrega un id del job creado
-
-* **GET** /heartbeat
-    * Indica si el servicio está operativo (devuelve `true`)
-
-Pueden agregar los datos que deseen (u otros endpoints) mientras se calcule el indice que se solicite. Es clave recalcar que se adhieran al *single responsability principle*, y hagan este servicio lo más pequeño posible.
-
-Debe estar disponible en otro container y debe llevar el tracking de los trabajos, cosa que se los puede proporcionar el framework que usen (usualmente es así por defecto).
-
-En un diagrama simplificado, se vería así
-
-![](https://i.imgur.com/ryNOto2.png)
-
-Para el requisito de continuous integration, les recomendamos usar los siguientes proveedores junto a su repo de GitHub
-
-* CircleCI
-    * (*Habra ayudantia disponible*)
-* Github Actions
-
-## Ejemplo de flujo
-
-Un usuario ingresa en la plataforma con credenciales creadas anteriormente a su aplicación. Este va a una lista de eventos disponibles y los revisa página por página. Para comenzar, escogera un trabajo y revisara el detalle de este. Aparecera el mensaje y un índice de dificultad. Pulsara un botón de "calcular dificultad" y se marcara el índice como pendiente. Despues de refrescar la página, podrá pasar que el índice esté calculado o no. Mientras se calcule, aparecera como "pendiente", pero si está calculado aparecera como listo.
+Debe crear una plataforma que pueda recibir usuarios y mostrar una lista de estos eventos desde el canal global. Tiene la opción de crear un mapa con esta información, para darle más valor.
 
 ## Especificaciones
 
-**Si un requisito está marcado como *crit*, el no cumplirlo en un grado mínimo (al menos un punto) reducirá la nota máxima a *4.0*. NO se revisaran entregas que no estén en la nube**
+Para esta tarea personal, “Entrega 0”, la idea es que todos aprendan la base de una aplicación montada en la web, por lo que deberán crear y configurar un servicio web que implemente un pequeño servicio de rastreo de usuarios. Los usuarios deben poder crear una cuenta y registrarse con las mismas credenciales.
 
-Por otro lado, debido a que esta entrega presenta una buena cantidad de *bonus*, la nota no puede sumar más de 8, para que decidan bien que les gustaría aprovechar.
+Pueden desarrollar su solución con el framework que deseen de esta lista
 
-Al final de la entrega, la idea es que se pongan de acuerdo con su ayudante para agendar una hora y hacer una demo en vivo para su corrección.
+Servicio web
 
+* Ruby
+    * Rails
+* Python
+    * FastAPI
+    * Django 
+* Javascript
+    * Koa
+    * Express
+* Brainfuck
+    * ???
+* Malbolge
+    * ??? ???
 
-### Requisitos funcionales (14 ptos)
+Lenguajes para el servicio de conexión a broker
 
-* **RF1 *(2 ptos)*:** Sus usuarios deben poder registrarse en la plataforma con datos de contacto y un correo electrónico
-* **RF2 *(2 ptos)*:** Los usuarios deben poder ver una lista paginada (de a 25 eventos) de los eventos disponibles en el servidor por orden de llegada.
-    * Mostrar un mapa con los eventos de esa página tiene un bonus<sup>2</sup>  de (5 ptos)
-* **RF3 *(7 ptos)*:** Debe poder verse el detalle de cada mensaje y pedir el cálculo del índice de complejidad
-* **RF4 *(3 ptos)*:** Debe haber un indicador que muestre si el ***servicio*** maestro de workers está disponible.
+* Ruby
+* Python
+* Javascript
+* Go
+* C#
+* C/C++
+* Brainfuck
+* Malbolge
 
+Cada servidor tendrá que tener un dominio asignado. Los dominios TK, ML o GA son gratuitos, y pueden conseguirlos fácilmente en Freenom o en el github student pack. Finalmente, en el servidor deberán configurar un servicio proxy inverso con NGINX que esté escuchando en el puerto 443, asegurado con SSL.
 
-### Requisitos no funcionales (38 ptos)
+Para esto, podrán usar Let's Encrypt, un servicio gratuito de implementación de HTTPS
 
-* **RNF1 *(6 ptos) (Esencial)*:** Deben usar un formato de Backend-Frontend separado: una API con respuestas JSON y un frontend. Esto es muy importante puesto que es crítico para las siguientes entregas. Usen un combo como Koa-React, Express-Flutter, FastAPI-Vue o cualquier otra combinación que les acomode.
-* **RNF2 *(3 ptos) (Esencial)*:** Sus aplicaciones en backend deben estar en un container docker, cada una. Debe coordinarse el levantamiento mediante docker compose
-* **RNF4 *(2 ptos) (Esencial)*:** Deben tener configuradas *Budget alerts*, para no alejarse del Free tier de AWS.
-* **RNF5 *(8 ptos)*:** Deben implementar un pipeline de CI. Como proveedores aceptados están CircleCI, Github Actions y AWS codebuild. Recomendamos los dos primeros porque los ayudantes tienen experiencia en estos dos. Esta implementación debe correr un script que genere una imagen para containers de su servicio
-    * Implementar un test trivial que pueda fallar (tipo `assert false` o similar) tiene un bonus de **3 ptos**
+Finalmente, solo pueden usar los siguientes proveedores en la nube, y sus servicios IaaS
 
-* **RNF5** (**15 ptos**): Deben crear el servicio que calcula los índices solicitados en el enunciado, el cual asigna tareas a *workers*, lleva el registro de trabajos y los resultados. Este servicio existe en un container *independiente*, se conecta via HTTP ofreciendo una API REST y posee workers conectados mediante un broker con capacidad de encolado/pubsub (redis/rabbitMQ), así como conexión a la base de datos del backend principal.
-    * Separar los workers en contenedores propios tiene un bonus de **5 ptos**
-* **RNF6** (***4 ptos***): Una vez que el cálculo de índices asociado a su solicitud de ping esté listo, deberán enviar una notificación vía correo a los usuarios que lo solicitaron. Este envío lo hace el servicio de cálculo de índices.
+* AWS
+* GCP
 
-### Documentación (8 ptos)
+Los ayudantes podrán responder sus dudas en AWS. Además, las ayudantías se referirán a AWS. Las siguientes herramientas / plataformas están prohibidas y no se corregirá nada que ocupe sus servicios:
 
-* **RDOC1 *(4 ptos)*:** Deben crear un diagrama UML  de componentes de la entrega, con **explicaciones y detalle** sobre el sistema. Esto deben tenerlo para la fecha final de entrega y lo deben dejar dentro de su repositorio de Github en una carpeta `/docs`.
-* **RDOC2 *(2 ptos)*:** Deben documentar los pasos necesarios para replicar el pipe CI/CD que usaron en su aplicación.
-* **RDOC3 *(2 ptos)*:** Deben documentar alguna forma de correr su aplicación en un ambiente local para propósitos de testeo.
+* Heroku
+* Ciertos servicios de AWS
+    * LightSail
+    * Elastic Beanstalk
+    * Amplify
+    * Cognito (para esta entrega)
+* Netlify
+* Firebase (excepto para notificaciones móviles)
 
+Y cualquier BaaS que implemente funcionalidad fuera de su código. 
+
+## Puntaje
+
+Esta entrega consiste en dos partes, la parte mínima (que todos deben lograr) que vale 50% de la nota final y una parte variable que también vale 50%. Sobre la parte variable, tendrán 3 opciones para trabajar, de las que deberán escoger 2. Cada una de las que escojan para evaluar vale 25% de la nota final, y realizar una tercera parte puede dar hasta 5 décimas.
+
+Los requisitos marcados como ***Esencial*** son obligatorios para que su tarea sea revisada. De no cumplir con estos, su tarea no será revisada.
+
+### Requisitos funcionales (10p)
+
+* **RF2: (5p)** ***Esencial*** Debe poder ofrecer en un sitio web la lista de todos los eventos que se han generado en el broker a medida que se vayan recibiendo
+* **RF3: (5p)** Se puede crear cuentas de usuario con mail, datos de contacto, nick y contraseñas. Se puede iniciar sesión con las cuentas creadas.
+
+### Requisitos no funcionales (20p)
+
+* **RNF1: (5p)** ***Esencial*** Debe poder conectarse al broker mediante el protocolo MQTT usando un daemon que corra de forma constante (puede usar *nohup* u otro método). Se le facilitarán credenciales para conectarse al broker (*hint*: use un archivo simple de intermediario)
+* **RNF1: (3p)** Debe haber un proxy inverso (como Nginx o Traefik) configurado.
+* **RNF2: (2p)** El servidor debe tener un nombre de dominio de primer nivel (tech, me, tk, ml, ga, com, cl, etc)
+* **RNF3: (2p)** ***Esencial*** El servidor debe estar corriendo en EC2.
+* **RNF4: (4p)** Debe haber una base de datos Postgres o Mongo externa asociada a la aplicación para guardar usuarios y consultarlos.
+* **RNF5: (4p)** ***Esencial*** El servicio debe estar dentro de un container Docker.
+
+### Variables
+
+#### Docker-Compose (25%) (15p)
+
+Componer servicios es esencial para obtener entornos de prueba confiables, especialmente en las máquinas de los desarrolladores. Arriésguense con este fascinante desafío.
+
+* **RNF1: (5p)** Lanzar su app web desde docker compose
+* **RNF2: (5p)** Integrar db desde docker compose
+* **RNF3: (5p)** Lanzar su receptor desde docker compose y conectarlo con un volumen a la app web (o base de datos si lo usara)
+
+#### HTTPS (25%) (15p)
+
+La seguridad es esencial para sus usuarios. Perfectamente podrían falsear el contenido del buscacursos y ustedes no se darían cuenta. Deben lograr que sus usuarios se sientan seguros en su aplicación.
+
+* **RNF1: (7p)** El dominio debe estar asegurado por SSL con Let’s Encrypt.
+* **RNF2: (3p)** Debe poder redireccionar HTTP a HTTPS.
+* **RNF3: (5p)** Se debe ejecutar el chequeo de expiración del certificado SSL de forma automática 2 veces al día (solo se actualiza realmente si está llegando a la fecha de expiración).
+
+#### Uso de puntos de datos (25%) (15p)
+
+Debe usar las posiciones incluidas en los mensajes y mostrarlas
+
+* **RF1: (9p)** Debe guardar los puntos incluidos en una base de datos, usando una extension especifica para eso (e.g. PostGIS con postgres)
+* **RF2: (6p)** Debe mostrar en un mapa los puntos de cada mensaje. Sugerimos usar leaflet para esto. Puede renderizar el sitio en servidor de forma estática
+* **RF3: (3p - bonus)** Los puntos deben mostrar el contenido del evento en el mapa
 
 ## Recomendaciones
 
-* Comiencen la entrega lo antes posible, puesto que es mas sencillo ir trabajando de a partes y seguro tendrán dudas. Se les dio plazo extra para que se adecuen a sus equipos de trabajo.
-* Planifiquen con antelación: pregunten dudas o ambigüedades a sus ayudantes.
-* Ojo con los deploys a última hora, la maldición de la demo es muy real.
-* Ocupen el Free Tier de AWS, que tiene capacidad para todos estos requerimientos. Deberían usar los siguientes servicios:
-	* **EC2**: AWS les proporciona una instancia t2.micro gratuita al mes.
-	* **S3**: Tienen 5 GB de almacenamiento y 20000 solicitudes GET.
-	* **RDS** (Opcional, Recomendado): Tienen 20GB y una instancia básica al mes.
-	* **API Gateway**: 1 MM de llamadas al mes
-	* **Lambda (Opcional)**: Tienen 400K GB/s y 1 MM de solicitudes.
-	* **EBS**: 30 GB al mes para almacenamiento de discos de sistema.
-	* **Cloudfront**: 50 GB al mes de transferencia.
-	* **Amazon SES**: 62000 mensajes salientes / mes.
-* **NO** está planificado hacer devolución por uso de dolares en AWS. Para la entrega el free tier de AWS es suficiente para conseguir todos los puntos. En caso de utilizar dólares en su solución, el curso no puede hacerles devolución de estos bajo ninguna causa.
-* Usen una cuenta nueva o de alguien que no tenga otras cargas en AWS, para evitar cargos por ahora, además de usar una tarjeta prepago y los budget alerts de AWS para evitar costos oculto<sup>4</sup> .
-* **USEN LEAFLET** para los mapas, o la API de google maps que tiene un free tier bastante generoso.
+* Lo más importante no es que la aplicación esté funcionando al 100%, sino que el servidor exista y se pueda acceder a la aplicación correctamente. 
+* Les sugerimos fuertemente invertir el mínimo de tiempo en la interfaz visual. Al menos para esta entrega basta con que se pueda llevar a cabo las funcionalidades solicitadas. Fíjense en la proporcion entre RNF y RF
 
-### Consideraciones
+### Roadmap sugerido
 
-No se considerarán entregas:
-* Con componentes que corran en sus computadores o servidores que no sean los básicos de Azure/AWS/GCP/Cloudfront. Algunos ejemplos, los servicios de AWS serían:
-    * EC2
-    * VPC
-    * IAM
-    * S3
-    * Lambda
-* Montadas en Heroku/Firebase/Elastic beanstalk/Lightsail/Netlify o similares.
-* Que no estén documentadas.
+Para simplificar esta primera entrega, le sugerimos seguir los siguientes pasos
 
+* Ejecute pruebas de concepto para conectarse al cliente MQTT
+* Levante un servidor web que pueda leer este output
+* Ponga su servicio en un container
+* Levante una máquina en AWS EC2 y abra los puertos
+* Instale docker en la máquina
+* Copie su aplicacion y construya el container
+* Corra su servicio
 
-# Puntaje
+## Entrega
 
-### Atraso
+Se les proporcionará un repositorio de Github Classroom donde pueden subir su código e ir registrando sus commits. 
 
-Para esta entrega se les descontará 0.5 puntos en la nota máxima por horas Fibonacci con F1 = 6 y F2 = 6. 
+Deben subir el código de su solución junto al archivo de configuración de Nginx (o Traefik u otro) en el repositorio que se les asignará vía github classroom.
+También deben entregar el archivo .pem asociado al servidor EC2 para tener los
+respectivos accesos y poder realizar una buena corrección.
+Además, para poder facilitar la corrección deben generar un README.md que señale:
 
-Se considerará como atraso cualquier modificación en features o implementación que tenga que ver solo con lo que se pide en esta entrega.
+* Consideraciones generales
+* Nombre del dominio
+* Método de acceso al servidor con archivo .pem y ssh (no publicar estas credenciales en el repositorio).
+* Puntos logrados o no logrados y comentarios si son necesarios para cada aspecto a evaluar en la Parte mínima y en la Parte variable.
+* De realizar un tercer requisito variable también explicitar en el readme.
 
-| Fibonacci | Hora               | Nota maxima |
-|-----------|--------------------|-------------|
-| 6         | 0:01 - 5:59        | 6.5         |
-| 6         | 6:00 - 11:59       | 6           |
-| 12        | 12:00 - 23:59      | 5           |
-| 18        | 24:00 - 41:59      | 4.5         |
-| 30        | 42:00 - 71:59      | 4           |
-| ...       | 72:00 en adelante  | 1           |
+Pueden sobrescribir este README sin problemas o cambiarle el nombre
 
-### Grupal
+Además, y como algo muy importante: **ESTÁ ABSOLUTAMENTE PROHIBIDO SUBIR SU ARCHIVO .PEM A SU REPOSITORIO DE GITHUB.** Si hacen esto se les calificará con nota 1. Para esto se les habilitará un buzón de canvas para que nos lo compartan.
 
-La nota se calcula como:
+Esta entrega es estrictamente individual y será revisada para casos de copia.
 
-**E<sub>1 grupal</sub> = 1 + E<sub>1 RF</sub> + E<sub>1 RNF</sub> + E<sub>1 RDOC</sub>**
+## Enlaces relevantes
 
-Siendo **E<sub>1 RF</sub>** el puntaje ponderado de los requisitos funcionales, y **E<sub>1 RNF</sub>** el correspondiente a los requisitos no funcionales y **E<sub>1 RDOC</sub>** de la documentación.
+* https://education.github.com/pack
+* https://aws.amazon.com/es/
+* [Docker - Instalación](https://docs.docker.com/engine/install/ubuntu/)
+* https://www.tutorialspoint.com/docker/docker_compose.htm
+* https://phoenixnap.com/kb/ssh-to-connect-to-remote-server-linux-or-windows
+* https://www.digitalocean.com/community/tags/deployment?type=tutorials
+* https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/
+* https://www.digitalocean.com/community/tutorials/how-to-install-nginx-on-ubuntu-20-04-es
+* https://www.freenom.com/es/index.html?lang=es
+* [Youtube - Freenom Tutorial](https://www.youtube.com/watch?v=XvyjIG2F-cs)
+* https://www.nginx.com/blog/using-free-ssltls-certificates-from-lets-encrypt-with-nginx/
+* [Documentación AWS SES](https://docs.aws.amazon.com/ses/latest/dg/Welcome.html)
+* [Documentación de OpenStreetMap]( https://wiki.openstreetmap.org/wiki/API_v0.6)
+* [MQTT.js tutorial](https://www.emqx.com/en/blog/mqtt-js-tutorial)
 
-### Individual
+## Ayudantías Útiles
 
-Segun el programa del curso<sup>5</sup> , esto se evalua como:
-
-**E<sub>1</sub> = 1 + ((E<sub>1 grupal</sub> - 1) * F<sub>g</sub>)**			
-Donde F<sub>g</sub> es un factor de coevaluación asignado por el grupo que va de 0 a 1.2. Para esto se enviará un form de coevaluación donde cada integrante deberá evaluar a sus compañeros de grupo con una puntuación entre 1 y 5. 
-
-**No podrán asignarle 5 puntos a más de un compañero, y sí lo hacen, se considerará que se entregó un máximo de 4 puntos a cada compañero**.
-
-De no realizar la coevaluación, asumiremos que se le entregó el mismo puntaje de coevaluación a cada integrante, es decir 4 puntos.
-
-## Links útiles
-
-* [Documentación de Celery](https://docs.celeryq.dev)
-* [Documentación de Bull](https://optimalbits.github.io/bull/)
-* [Circle CI Blogs - CI para Django](https://circleci.com/blog/continuous-integration-for-django-projects/)
+* **Ayudantía 1** - Cloud 1: AWS, Linux y EC2 - 12/08/22
+* **Ayudantía 2** - Cloud 2: Docker, Docker-Compose y alternativas - 19/08/22
+* **Ayudantía 3** - Cloud 3: Deployment básico - 26/08/22
 
 ## Apoyo
 
-Cada grupo tendrá un ayudante asignado el cuál podrán elegir mediante un link que se les mandará oportunamente. Este ayudante está encargado de hacerles seguimiento y orientar sus dudas para responderlas ellos mismos y el equipo de ayudantes. Les recomendamos **fuertemente** que pregunten sus dudas a su ayudante de seguimiento puesto que conocen del proyecto o pueden dirigir sus dudas a otros ayudantes. Puede ser de enunciado, código o algún tópico<sup>3</sup>  que tenga que ver con el proyecto
-
-Dado que cada ayudante puede tener pequeñas diferencias en sus correcciones, queda a criterio de este hacer relajos o hacer mas estrictas ciertas particularidades. Intenten tener un flujo de comunicación directo con sus ayudantes para aclarar posibles diferencias o decisiones de diseño.
-
-Pueden usar el Slack del curso para dudas más rápidas. Usen el [canal #e1](https://arqui-software.slack.com/archives/C037YKULFQF) para sus dudas.
-
-Las ayudantías programadas relevantes para esto por ahora son:
-
-* CronJobs y Workers (Cápsula)
-* Continuous Integration
-
-También está presupuestada una sala de ayuda para el proyecto con fecha a anunciarse.
-
-Se les avisará con antelación cuándo son y si habrá más.
-
-***rsYdA0bMwMoF9eWuEM6z***
+Pueden usar el Slack del curso en el canal #E0 para dudas más rápidas.
