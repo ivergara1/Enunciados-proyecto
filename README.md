@@ -1,86 +1,17 @@
-# IIC2173 - E1 - ERT DIY
-*aka. Equipos de respuesta temprana, versión hazlo tu mismo*
+# IIC2173 - E2 - ERT HQV
 
-Después de un alto éxito en la recuperación de datos de emergencia, su consultora LegitBusiness les ha pedido que pasen a una versión mas poderosa de su plataforma. Dado que el despliegue de un equipo ERT tiene un coste altísimo en una emergencia, se les ha pedido que realicen un sistema para buscar<sup>1</sup>y ver la evaluación de las emergencias que podrían tomar los equipos ERT. Para simplificar la plataforma lo más posible para sus usuarios, se les ha pedido que entreguen esta evaluación en forma de índice.
+*aka. Equipos de respuesta temprana, high quality version*
 
 ## Objetivo
 
-Deben extender su plataforma web para que sea capaz de calcular índices de dificultad en base a los últimos mensajes recibidos
+La entrega está intencionada para que creen un diseño sólido de una aplicación utilizando diversas herramientas clave a la hora de ofrecer una aplicación cualquiera. Además, se introducirá el uso de Serverless como tecnología altamente útil y escalable.
 
-Utilizando a la conexión que ya poseen con el broker de eventos, su app debe seguir recolectando los datos según el formato de la E0
+## Enunciado
 
-```json
-{
-    "type":"string",
-    "lat":float,
-    "lon":float,
-    "location":"string",
-    "message":"string",
-    "level":int
-}
-```
+Felicidades! Al haber logrado el MVP de la primera parte de la solución, el CEEEEO (Chief Executive Expectations Excellence Efficience Officer segun dice) de LegitBusiness, el mas alto cargo de la organización, les ha pedido que continuen con su proyecto para que lo enfoquen a una instancia colaborativa.
+Antes de implementar la parte más importante de su sistema (la que vendrá en la siguiente iteración), el CEEEEO les pide que ofrezcan una base técnica potente, la cual será clave para que su solución sea mantenible, escalable y segura. 
 
-Usando esta data, le presentará a los usuarios una lista de los eventos, de forma paginada. Los usuarios podrán escoger un evento y solicitar un **cálculo de complejidad** *I<sub>comp</sub>* que se explicará en la siguiente sección.
-
-Adicionalmente, para empezar a lograr un proceso de implementación más expedita de su proyecto, se les pedirá que separen su solución en frontend y backend, además de implementar un proceso de *continuous integration*.
-
-### *Cálculo de I<sub>comp</sub>*
-
-El índice de complejidad se construye mediante la obtención de la suma de la distancia de los eventos a menos de 3 kilómetros de un evento seleccionado, teniendo cada distancia ponderada por el nivel de ese evento dividido por 100, considerando los últimos 2000 eventos. En fórmula sería así:
-
-<center>
-    <img width="20%" src="https://i.imgur.com/SxdiIpH.png">
-</center>
-
-Donde n = 1999, l_i es el nivel del evento i y d<sub>i</sub> es la distancia al evento seleccionado
-
-Este cálculo tomará tiempo por lo que deberá hacerse mediante workers para no detener el flujo principal de su aplicación.
-
-## Implementacion de los workers
-
-Un worker es una instancia de un código generada específicamente para cumplir una tarea asignada, luego de lo cual podría tomar otra, esperar o desaparecer, en base a la alimentación que reciba de una cola de órdenes.
-
-Estos workers se coordinan con un broker y una instancia maestra de coordinación
-
-Afortunadamente, existen paquetes de software que simplifican el trabajo de la implementación de workers.
-
-Recomendamos las siguientes implementaciones para los siguientes lenguajes
-
-* FastAPI, Django
-    * Celery
-* Node
-    * Bull
-* Ruby on rails
-    * Sideqik
-
-Estos workers deben estar coordinados por un maestro independiente de su aplicación. Este maestro es completamente separado de su aplicación y ofrece una API HTTP para recibir las órdenes y ver los resultados. Ofrecerá tres endpoints 
-
-* **GET** /job/(:id)
-    * :id representa el id de un job creado
-
-* **POST** /job
-    * Recibe los datos necesarios para el cálculo y entrega un id del job creado
-
-* **GET** /heartbeat
-    * Indica si el servicio está operativo (devuelve `true`)
-
-Pueden agregar los datos que deseen (u otros endpoints) mientras se calcule el indice que se solicite. Es clave recalcar que se adhieran al *single responsability principle*, y hagan este servicio lo más pequeño posible.
-
-Debe estar disponible en otro container y debe llevar el tracking de los trabajos, cosa que se los puede proporcionar el framework que usen (usualmente es así por defecto).
-
-En un diagrama simplificado, se vería así
-
-![](https://i.imgur.com/ryNOto2.png)
-
-Para el requisito de continuous integration, les recomendamos usar los siguientes proveedores junto a su repo de GitHub
-
-* CircleCI
-    * (*Habra ayudantia disponible*)
-* Github Actions
-
-## Ejemplo de flujo
-
-Un usuario ingresa en la plataforma con credenciales creadas anteriormente a su aplicación. Este va a una lista de eventos disponibles y los revisa página por página. Para comenzar, escogera un trabajo y revisara el detalle de este. Aparecera el mensaje y un índice de dificultad. Pulsara un botón de "calcular dificultad" y se marcara el índice como pendiente. Despues de refrescar la página, podrá pasar que el índice esté calculado o no. Mientras se calcule, aparecera como "pendiente", pero si está calculado aparecera como listo.
+Finalmente, les han pedido la capacidad de emitir reportes en PDF para ofrecer capacidades de reportería y archivado, tan comunes en los sistemas interconectados
 
 ## Especificaciones
 
@@ -88,37 +19,39 @@ Un usuario ingresa en la plataforma con credenciales creadas anteriormente a su 
 
 Por otro lado, debido a que esta entrega presenta una buena cantidad de *bonus*, la nota no puede sumar más de 8, para que decidan bien que les gustaría aprovechar.
 
+Para esta entrega, deben completar todos los requisitos de la entrega pasada marcados como **Esencial**, puesto que son necesarios para completar esta entrega. **Cada feature *Esencial* faltante, incurre en un descuento de *0.4 pto***
+
 Al final de la entrega, la idea es que se pongan de acuerdo con su ayudante para agendar una hora y hacer una demo en vivo para su corrección.
 
+### Requisitos funcionales (8 ptos)
 
-### Requisitos funcionales (14 ptos)
-
-* **RF1 *(2 ptos)*:** Sus usuarios deben poder registrarse en la plataforma con datos de contacto y un correo electrónico
-* **RF2 *(2 ptos)*:** Los usuarios deben poder ver una lista paginada (de a 25 eventos) de los eventos disponibles en el servidor por orden de llegada.
-    * Mostrar un mapa con los eventos de esa página tiene un bonus<sup>2</sup>  de (5 ptos)
-* **RF3 *(7 ptos)*:** Debe poder verse el detalle de cada mensaje y pedir el cálculo del índice de complejidad
-* **RF4 *(3 ptos)*:** Debe haber un indicador que muestre si el ***servicio*** maestro de workers está disponible.
+* **RF01** (**8 ptos**) ***crit***: Cada punto debe tener la opción de generar un PDF como reporte de situación del punto. Este reporte trae una foto del mapa, los datos en un formato accesible y un timestamp.
 
 
-### Requisitos no funcionales (38 ptos)
+### Requisitos no funcionales (47 ptos)
 
-* **RNF1 *(6 ptos) (Esencial)*:** Deben usar un formato de Backend-Frontend separado: una API con respuestas JSON y un frontend. Esto es muy importante puesto que es crítico para las siguientes entregas. Usen un combo como Koa-React, Express-Flutter, FastAPI-Vue o cualquier otra combinación que les acomode.
-* **RNF2 *(3 ptos) (Esencial)*:** Sus aplicaciones en backend deben estar en un container docker, cada una. Debe coordinarse el levantamiento mediante docker compose
-* **RNF4 *(2 ptos) (Esencial)*:** Deben tener configuradas *Budget alerts*, para no alejarse del Free tier de AWS.
-* **RNF5 *(8 ptos)*:** Deben implementar un pipeline de CI. Como proveedores aceptados están CircleCI, Github Actions y AWS codebuild. Recomendamos los dos primeros porque los ayudantes tienen experiencia en estos dos. Esta implementación debe correr un script que genere una imagen para containers de su servicio
-    * Implementar un test trivial que pueda fallar (tipo `assert false` o similar) tiene un bonus de **3 ptos**
+* **RNF01** (***8 ptos***) ***crit*** : Su app debe estar detrás de una AWS API gateway tipo REST, con los endpoints declarados en esta. Debe asociarse un subdominio a esta (e.g. api.miapp.com) y debe tener CORS correctamente configurado.
 
-* **RNF5** (**15 ptos**): Deben crear el servicio que calcula los índices solicitados en el enunciado, el cual asigna tareas a *workers*, lleva el registro de trabajos y los resultados. Este servicio existe en un container *independiente*, se conecta via HTTP ofreciendo una API REST y posee workers conectados mediante un broker con capacidad de encolado/pubsub (redis/rabbitMQ), así como conexión a la base de datos del backend principal.
-    * Separar los workers en contenedores propios tiene un bonus de **5 ptos**
-* **RNF6** (***4 ptos***): Una vez que el cálculo de índices asociado a su solicitud de ping esté listo, deberán enviar una notificación vía correo a los usuarios que lo solicitaron. Este envío lo hace el servicio de cálculo de índices.
+* **RNF02** (***9 ptos***) ***crit***: Deben implementar un servicio de autenticacion/autorización (auth). Este servicio puede ser en base a un servicio de tercros como Auth0, cognito o pueden hacerlo ustedes. Si hacen un servicio ustedes desde 0, tienen un bonus de **5 ptos**. Este RNF requiere que ustedes extraigan toda la lógica de los usuarios de la app principal y la trasladen a el servicio hecho por ustedes o el externo. Recomendamos fuertemente usar el modelo Oauth o como mínimo intercambiar tokens JWT con la audiencia e issuer correctos.
 
-### Documentación (8 ptos)
+* **RNF03** (***3 ptos***): Su frontend debe estar desplegado en S3 con una distribución Cloudfront. Todos los assets de su aplicación Web, tales como imágenes, iconos, videos y archivos dinámicos (incluyendo los del RF4) deben estar en un bucket en AWS S3 standard.
 
-* **RDOC1 *(4 ptos)*:** Deben crear un diagrama UML  de componentes de la entrega, con **explicaciones y detalle** sobre el sistema. Esto deben tenerlo para la fecha final de entrega y lo deben dejar dentro de su repositorio de Github en una carpeta `/docs`.
-* **RDOC2 *(2 ptos)*:** Deben documentar los pasos necesarios para replicar el pipe CI/CD que usaron en su aplicación.
-* **RDOC3 *(2 ptos)*:** Deben documentar alguna forma de correr su aplicación en un ambiente local para propósitos de testeo.
+* **RNF04** (***3 ptos***): Su API Gateway debe poder usar al servicio del RNF02 para autenticar a los usuarios directamente.
 
+* **RNF05** (***9 ptos***): La aplicación tiene que ofrecer un servicio de generacion de reportes PDF desde AWS Lambda, según lo explicado en las secciones anteriores. Este reporte debe almacenarse en S3 y se le debe entregar al usuario un enlace público para descargarlo desde S3. Deben utilizar Serverless.js o AWS SAM para manejar y desplegar esta función. Crear un pipe CI/CD para  tiene un bonus de **4 ptos**
 
+* **RNF06** (***3 ptos***) ***crit*** : Su app debe ofrecer su backend y frontend utilizando HTTPS
+
+* **RNF07** (***5 ptos***): Deben implementar CD en su pipeline CI/CD para **backend**. Como proveedores aceptados de CI están Github Actions, Codebuild y CircleCI. Para deployment deben usar AWS codedeploy.
+
+* **RNF08** (***5 ptos***): Deben implementar CD en su pipeline CI/CD para **frontend**. Como proveedores aceptados de CI están Github Actions, Codebuild y CircleCI. Para deployment deben subir su frontend a AWS S3 e invalidar la caché de Cloudfront que sirve su frontend
+
+### Documentación (5 ptos)
+
+* **RDOC1 *(5 ptos)* crit:** Deben actualizar los documentos en `/docs` para reflejar
+    * Como subir su aplicación en Serverless/SAM, paso a paso
+    * Documentaci''on de su API Gateway
+* 
 ## Recomendaciones
 
 * Comiencen la entrega lo antes posible, puesto que es mas sencillo ir trabajando de a partes y seguro tendrán dudas. Se les dio plazo extra para que se adecuen a sus equipos de trabajo.
@@ -134,8 +67,6 @@ Al final de la entrega, la idea es que se pongan de acuerdo con su ayudante para
 	* **Cloudfront**: 50 GB al mes de transferencia.
 	* **Amazon SES**: 62000 mensajes salientes / mes.
 * **NO** está planificado hacer devolución por uso de dolares en AWS. Para la entrega el free tier de AWS es suficiente para conseguir todos los puntos. En caso de utilizar dólares en su solución, el curso no puede hacerles devolución de estos bajo ninguna causa.
-* Usen una cuenta nueva o de alguien que no tenga otras cargas en AWS, para evitar cargos por ahora, además de usar una tarjeta prepago y los budget alerts de AWS para evitar costos oculto<sup>4</sup> .
-* **USEN LEAFLET** para los mapas, o la API de google maps que tiene un free tier bastante generoso.
 
 ### Consideraciones
 
@@ -148,7 +79,6 @@ No se considerarán entregas:
     * Lambda
 * Montadas en Heroku/Firebase/Elastic beanstalk/Lightsail/Netlify o similares.
 * Que no estén documentadas.
-
 
 # Puntaje
 
@@ -188,13 +118,9 @@ De no realizar la coevaluación, asumiremos que se le entregó el mismo puntaje 
 
 ## Links útiles
 
-* [Documentación de Celery](https://docs.celeryq.dev)
-* [Documentación de Bull](https://optimalbits.github.io/bull/)
-* [Circle CI Blogs - CI para Django](https://circleci.com/blog/continuous-integration-for-django-projects/)
+# Apoyo
 
-## Apoyo
-
-Cada grupo tendrá un ayudante asignado el cuál podrán elegir mediante un link que se les mandará oportunamente. Este ayudante está encargado de hacerles seguimiento y orientar sus dudas para responderlas ellos mismos y el equipo de ayudantes. Les recomendamos **fuertemente** que pregunten sus dudas a su ayudante de seguimiento puesto que conocen del proyecto o pueden dirigir sus dudas a otros ayudantes. Puede ser de enunciado, código o algún tópico<sup>3</sup>  que tenga que ver con el proyecto
+Cada grupo tendrá un ayudante asignado el cuál podrán elegir mediante un link que se les mandará oportunamente. Este ayudante está encargado de hacerles seguimiento y orientar sus dudas para responderlas ellos mismos y el equipo de ayudantes. Les recomendamos **fuertemente** que pregunten sus dudas a su ayudante de seguimiento puesto que conocen del proyecto o pueden dirigir sus dudas a otros ayudantes. Puede ser de enunciado, código o algún tópico que tenga que ver con el proyecto
 
 Dado que cada ayudante puede tener pequeñas diferencias en sus correcciones, queda a criterio de este hacer relajos o hacer mas estrictas ciertas particularidades. Intenten tener un flujo de comunicación directo con sus ayudantes para aclarar posibles diferencias o decisiones de diseño.
 
@@ -202,11 +128,11 @@ Pueden usar el Slack del curso para dudas más rápidas. Usen el [canal #e1](htt
 
 Las ayudantías programadas relevantes para esto por ahora son:
 
-* CronJobs y Workers (Cápsula)
-* Continuous Integration
+* S3 Upload
+* API Gateway
+* Serverless SAM
+* CD
 
 También está presupuestada una sala de ayuda para el proyecto con fecha a anunciarse.
 
 Se les avisará con antelación cuándo son y si habrá más.
-
-***rsYdA0bMwMoF9eWuEM6z***
