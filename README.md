@@ -1,86 +1,19 @@
-# IIC2173 - E1 - ERT DIY
-*aka. Equipos de respuesta temprana, versión hazlo tu mismo*
 
-Después de un alto éxito en la recuperación de datos de emergencia, su consultora LegitBusiness les ha pedido que pasen a una versión mas poderosa de su plataforma. Dado que el despliegue de un equipo ERT tiene un coste altísimo en una emergencia, se les ha pedido que realicen un sistema para buscar<sup>1</sup>y ver la evaluación de las emergencias que podrían tomar los equipos ERT. Para simplificar la plataforma lo más posible para sus usuarios, se les ha pedido que entreguen esta evaluación en forma de índice.
+# IIC2173 - E3 - ERT MMCSIT
+
+*aka. Equipos de respuesta temprana, Multiverse metacombination to cultivate synergistic integrated teamsa*
+
 
 ## Objetivo
 
-Deben extender su plataforma web para que sea capaz de calcular índices de dificultad en base a los últimos mensajes recibidos
+La entrega está intencionada para que apliquen conceptos aprendidos a lo largo del semestre y puedan integrarse con otros grupos. Además, aprenderán a integrar y mejorar un servicio preparado
 
-Utilizando a la conexión que ya poseen con el broker de eventos, su app debe seguir recolectando los datos según el formato de la E0
+## Enunciado
 
-```json
-{
-    "type":"string",
-    "lat":float,
-    "lon":float,
-    "location":"string",
-    "message":"string",
-    "level":int
-}
-```
+Ahora que su entrega está más sólida, van por el último plan, y el que aporta más valor a su idea. Van a integrar un chat preensamblado, open source para que los usuarios puedan comunicarse y conversar sobre las alertas de importancia, añadiendo verificaciones. Con este nuevo hit de interactividad esperan tener una plataforma lista para salir al mercado. Para lograr la parte colaborativa mencionada la entrega pasada, se les pide que los usuarios de otros grupos puedan acceder a estos chats.
 
-Usando esta data, le presentará a los usuarios una lista de los eventos, de forma paginada. Los usuarios podrán escoger un evento y solicitar un **cálculo de complejidad** *I<sub>comp</sub>* que se explicará en la siguiente sección.
+Adicionalmente, se les pide que incorporen ciertas mejoras para lograr una entrega más solida y extensible, utilizando IaC.
 
-Adicionalmente, para empezar a lograr un proceso de implementación más expedita de su proyecto, se les pedirá que separen su solución en frontend y backend, además de implementar un proceso de *continuous integration*.
-
-### *Cálculo de I<sub>comp</sub>*
-
-El índice de complejidad se construye mediante la obtención de la suma de la distancia de los eventos a menos de 3 kilómetros de un evento seleccionado, teniendo cada distancia ponderada por el nivel de ese evento dividido por 100, considerando los últimos 2000 eventos. En fórmula sería así:
-
-<center>
-    <img width="20%" src="https://i.imgur.com/SxdiIpH.png">
-</center>
-
-Donde n = 1999, l_i es el nivel del evento i y d<sub>i</sub> es la distancia al evento seleccionado
-
-Este cálculo tomará tiempo por lo que deberá hacerse mediante workers para no detener el flujo principal de su aplicación.
-
-## Implementacion de los workers
-
-Un worker es una instancia de un código generada específicamente para cumplir una tarea asignada, luego de lo cual podría tomar otra, esperar o desaparecer, en base a la alimentación que reciba de una cola de órdenes.
-
-Estos workers se coordinan con un broker y una instancia maestra de coordinación
-
-Afortunadamente, existen paquetes de software que simplifican el trabajo de la implementación de workers.
-
-Recomendamos las siguientes implementaciones para los siguientes lenguajes
-
-* FastAPI, Django
-    * Celery
-* Node
-    * Bull
-* Ruby on rails
-    * Sideqik
-
-Estos workers deben estar coordinados por un maestro independiente de su aplicación. Este maestro es completamente separado de su aplicación y ofrece una API HTTP para recibir las órdenes y ver los resultados. Ofrecerá tres endpoints 
-
-* **GET** /job/(:id)
-    * :id representa el id de un job creado
-
-* **POST** /job
-    * Recibe los datos necesarios para el cálculo y entrega un id del job creado
-
-* **GET** /heartbeat
-    * Indica si el servicio está operativo (devuelve `true`)
-
-Pueden agregar los datos que deseen (u otros endpoints) mientras se calcule el indice que se solicite. Es clave recalcar que se adhieran al *single responsability principle*, y hagan este servicio lo más pequeño posible.
-
-Debe estar disponible en otro container y debe llevar el tracking de los trabajos, cosa que se los puede proporcionar el framework que usen (usualmente es así por defecto).
-
-En un diagrama simplificado, se vería así
-
-![](https://i.imgur.com/ryNOto2.png)
-
-Para el requisito de continuous integration, les recomendamos usar los siguientes proveedores junto a su repo de GitHub
-
-* CircleCI
-    * (*Habra ayudantia disponible*)
-* Github Actions
-
-## Ejemplo de flujo
-
-Un usuario ingresa en la plataforma con credenciales creadas anteriormente a su aplicación. Este va a una lista de eventos disponibles y los revisa página por página. Para comenzar, escogera un trabajo y revisara el detalle de este. Aparecera el mensaje y un índice de dificultad. Pulsara un botón de "calcular dificultad" y se marcara el índice como pendiente. Despues de refrescar la página, podrá pasar que el índice esté calculado o no. Mientras se calcule, aparecera como "pendiente", pero si está calculado aparecera como listo.
 
 ## Especificaciones
 
@@ -88,54 +21,50 @@ Un usuario ingresa en la plataforma con credenciales creadas anteriormente a su 
 
 Por otro lado, debido a que esta entrega presenta una buena cantidad de *bonus*, la nota no puede sumar más de 8, para que decidan bien que les gustaría aprovechar.
 
+Para esta entrega, deben completar todos los requisitos de la entrega pasada marcados como **Esencial**, puesto que son necesarios para completar esta entrega. **Cada feature *Esencial* faltante, incurre en un descuento de *0.4 pto***
+
 Al final de la entrega, la idea es que se pongan de acuerdo con su ayudante para agendar una hora y hacer una demo en vivo para su corrección.
 
+### Requisitos funcionales (16 ptos)
 
-### Requisitos funcionales (14 ptos)
+* ***2 ptos*** Debe poder designar usuarios como "Verified responder". Esto debe ser un booleano en su chat
 
-* **RF1 *(2 ptos)*:** Sus usuarios deben poder registrarse en la plataforma con datos de contacto y un correo electrónico
-* **RF2 *(2 ptos)*:** Los usuarios deben poder ver una lista paginada (de a 25 eventos) de los eventos disponibles en el servidor por orden de llegada.
-    * Mostrar un mapa con los eventos de esa página tiene un bonus<sup>2</sup>  de (5 ptos)
-* **RF3 *(7 ptos)*:** Debe poder verse el detalle de cada mensaje y pedir el cálculo del índice de complejidad
-* **RF4 *(3 ptos)*:** Debe haber un indicador que muestre si el ***servicio*** maestro de workers está disponible.
+* ***2 ptos*** Cada usuario debe tener asignado un UUID v4. Esto es necesario para poder conectarlos a otro equipo con una mínima probabilidad de colisión
 
+* Deben integrar el chat con su app:
+    * ***3 ptos*** Debe haber un room general para que cualquier usuario identificado pueda conectarse. Los usuarios deben poder ver el historial de ese chat (Pueden mostrar los 1000 últimos mensajes)
+    * ***5 ptos*** Deben mostrar una lista de salas disponibles, y poder unirse a ellas. Indicar quienes están conectados a cada sala en tiempo real tiene un bonus de ***5 ptos***
+    * ***4 ptos*** Cada alerta con level superior a 9000 debe generar una sala de chat a la que se puedan unir usuarios designados como "Verified responder"
+    * Deben usar Secure websockets para el chat, con Let's encrypt sobre nginx, configurado como reverse proxy
 
-### Requisitos no funcionales (38 ptos)
+### Requisitos No Funcionales (44 ptos)
 
-* **RNF1 *(6 ptos) (Esencial)*:** Deben usar un formato de Backend-Frontend separado: una API con respuestas JSON y un frontend. Esto es muy importante puesto que es crítico para las siguientes entregas. Usen un combo como Koa-React, Express-Flutter, FastAPI-Vue o cualquier otra combinación que les acomode.
-* **RNF2 *(3 ptos) (Esencial)*:** Sus aplicaciones en backend deben estar en un container docker, cada una. Debe coordinarse el levantamiento mediante docker compose
-* **RNF4 *(2 ptos) (Esencial)*:** Deben tener configuradas *Budget alerts*, para no alejarse del Free tier de AWS.
-* **RNF5 *(8 ptos)*:** Deben implementar un pipeline de CI. Como proveedores aceptados están CircleCI, Github Actions y AWS codebuild. Recomendamos los dos primeros porque los ayudantes tienen experiencia en estos dos. Esta implementación debe correr un script que genere una imagen para containers de su servicio
-    * Implementar un test trivial que pueda fallar (tipo `assert false` o similar) tiene un bonus de **3 ptos**
+* Deben modificar el chat proporcionado
+    * Bonus!: ***6 ptos*** Cada mensaje puede recibir un análisis de sentimientos, que indica el tono del mensaje: bueno, malo y neutro. Para esto debe implementarlo con Amazon Comprehend corriendo desde AWS Lambda, usando la API Gateway que tenían antes
+    * ***7 ptos*** Debe agregar monitoreo a su app de diversas métricas y estados. Para esto deben aparecer en un dashboard
+        * 2 métricas básicas de su servicio backend (CPU, RAM)
+        * 1 alarma de disponibilidad
+            * Puede usar New Relic o Prometheus/Grafana para esto. Cualquier otra herramienta debe consultar con su ayudante
+        * Agregar una traza funcional sintética (e.g. el proceso de login) tiene un bonus de ***3 ptos***
+    * ***7 ptos*** El chat debe poder replicarse en 3 instancias. Para esto pueden utilizar la directiva de docker-compose ***--scale service_name=3***. Deben implementar un balanceo de carga de los websockets con política de balanceo "round-robin"
 
-* **RNF5** (**15 ptos**): Deben crear el servicio que calcula los índices solicitados en el enunciado, el cual asigna tareas a *workers*, lleva el registro de trabajos y los resultados. Este servicio existe en un container *independiente*, se conecta via HTTP ofreciendo una API REST y posee workers conectados mediante un broker con capacidad de encolado/pubsub (redis/rabbitMQ), así como conexión a la base de datos del backend principal.
-    * Separar los workers en contenedores propios tiene un bonus de **5 ptos**
-* **RNF6** (***4 ptos***): Una vez que el cálculo de índices asociado a su solicitud de ping esté listo, deberán enviar una notificación vía correo a los usuarios que lo solicitaron. Este envío lo hace el servicio de cálculo de índices.
+* ***20 ptos*** ***Esencial*** Deben integrar otros usuarios de otro equipo (solo uno) en sus chats
+    * Para esto deberán implementar un chequeo de JWT utilizando clave pública (RSA). El equipo que se integra a su chat (Equipo A) debe emitir un token firmado con una clave privada e identificado con un kid en el header. Paralelamente, el Equipo A debe publicar una llave en formato JWK con un kid coincidente. Su equipo, a la hora de recibir este token debe:
+        * Chequear de este token que coincidan los claims estándar
+            * *aud*
+            * *iss*
+            * *iat*
+            * *exp*
+        * El equipo A debe agregar los siguientes claims 
+            * *val*: Si el usuario está validado 
+            * *sub*: Un UUID para el usuario que viene a inscribirse
+    * Un token válido presentado del equipo A permite a su chat darle un token de acceso nuevo (con una firma privada) para que este usuario nuevo pueda enviar mensajes al chat directamente con su UUID. 
+    * Hay un bonus de ***3 ptos*** por integrarse con un segundo grupo
 
-### Documentación (8 ptos)
+* ***10 ptos*** Deben crear una especificación de IaaC para levantar su backend con una de las siguientes herramientas (Levantar su frontend con IaaC tiene un bonus de **5ptos**)
+    * Terraform
+    * AWS CDK
 
-* **RDOC1 *(4 ptos)*:** Deben crear un diagrama UML  de componentes de la entrega, con **explicaciones y detalle** sobre el sistema. Esto deben tenerlo para la fecha final de entrega y lo deben dejar dentro de su repositorio de Github en una carpeta `/docs`.
-* **RDOC2 *(2 ptos)*:** Deben documentar los pasos necesarios para replicar el pipe CI/CD que usaron en su aplicación.
-* **RDOC3 *(2 ptos)*:** Deben documentar alguna forma de correr su aplicación en un ambiente local para propósitos de testeo.
-
-
-## Recomendaciones
-
-* Comiencen la entrega lo antes posible, puesto que es mas sencillo ir trabajando de a partes y seguro tendrán dudas. Se les dio plazo extra para que se adecuen a sus equipos de trabajo.
-* Planifiquen con antelación: pregunten dudas o ambigüedades a sus ayudantes.
-* Ojo con los deploys a última hora, la maldición de la demo es muy real.
-* Ocupen el Free Tier de AWS, que tiene capacidad para todos estos requerimientos. Deberían usar los siguientes servicios:
-	* **EC2**: AWS les proporciona una instancia t2.micro gratuita al mes.
-	* **S3**: Tienen 5 GB de almacenamiento y 20000 solicitudes GET.
-	* **RDS** (Opcional, Recomendado): Tienen 20GB y una instancia básica al mes.
-	* **API Gateway**: 1 MM de llamadas al mes
-	* **Lambda (Opcional)**: Tienen 400K GB/s y 1 MM de solicitudes.
-	* **EBS**: 30 GB al mes para almacenamiento de discos de sistema.
-	* **Cloudfront**: 50 GB al mes de transferencia.
-	* **Amazon SES**: 62000 mensajes salientes / mes.
-* **NO** está planificado hacer devolución por uso de dolares en AWS. Para la entrega el free tier de AWS es suficiente para conseguir todos los puntos. En caso de utilizar dólares en su solución, el curso no puede hacerles devolución de estos bajo ninguna causa.
-* Usen una cuenta nueva o de alguien que no tenga otras cargas en AWS, para evitar cargos por ahora, además de usar una tarjeta prepago y los budget alerts de AWS para evitar costos oculto<sup>4</sup> .
-* **USEN LEAFLET** para los mapas, o la API de google maps que tiene un free tier bastante generoso.
 
 ### Consideraciones
 
@@ -148,7 +77,6 @@ No se considerarán entregas:
     * Lambda
 * Montadas en Heroku/Firebase/Elastic beanstalk/Lightsail/Netlify o similares.
 * Que no estén documentadas.
-
 
 # Puntaje
 
@@ -188,25 +116,17 @@ De no realizar la coevaluación, asumiremos que se le entregó el mismo puntaje 
 
 ## Links útiles
 
-* [Documentación de Celery](https://docs.celeryq.dev)
-* [Documentación de Bull](https://optimalbits.github.io/bull/)
-* [Circle CI Blogs - CI para Django](https://circleci.com/blog/continuous-integration-for-django-projects/)
+IaaC:
+* 
 
-## Apoyo
+* [Terraform Basics](https://www.adictosaltrabajo.com/2020/06/19/primeros-pasos-con-terraform-crear-instancia-ec2-en-aws/)
+* [Terraform EC2](https://registry.terraform.io/modules/terraform-aws-modules/ec2-instance/aws/latest)
+* [Terraform Api Gateway](https://registry.terraform.io/modules/terraform-aws-modules/apigateway-v2/aws/latest)
+* [Terraform S3](https://registry.terraform.io/modules/terraform-aws-modules/s3-bucket/aws/latest)
 
-Cada grupo tendrá un ayudante asignado el cuál podrán elegir mediante un link que se les mandará oportunamente. Este ayudante está encargado de hacerles seguimiento y orientar sus dudas para responderlas ellos mismos y el equipo de ayudantes. Les recomendamos **fuertemente** que pregunten sus dudas a su ayudante de seguimiento puesto que conocen del proyecto o pueden dirigir sus dudas a otros ayudantes. Puede ser de enunciado, código o algún tópico<sup>3</sup>  que tenga que ver con el proyecto
 
-Dado que cada ayudante puede tener pequeñas diferencias en sus correcciones, queda a criterio de este hacer relajos o hacer mas estrictas ciertas particularidades. Intenten tener un flujo de comunicación directo con sus ayudantes para aclarar posibles diferencias o decisiones de diseño.
-
-Pueden usar el Slack del curso para dudas más rápidas. Usen el [canal #e1](https://arqui-software.slack.com/archives/C037YKULFQF) para sus dudas.
+# Apoyo
 
 Las ayudantías programadas relevantes para esto por ahora son:
-
-* CronJobs y Workers (Cápsula)
-* Continuous Integration
-
-También está presupuestada una sala de ayuda para el proyecto con fecha a anunciarse.
-
-Se les avisará con antelación cuándo son y si habrá más.
-
-***rsYdA0bMwMoF9eWuEM6z***
+* Presentación del chat y del enunciado
+* Monitoreo
